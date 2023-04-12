@@ -1,0 +1,87 @@
+# Создаем таблицу regions
+
+CREATE TABLE "regions" (
+  id serial PRIMARY KEY,
+  name varchar
+);
+
+# Создаем таблицу  locations
+
+CREATE TABLE "locations" (
+  id serial PRIMARY KEY,
+  address varchar,
+  region_id integer REFERENCES regions (id)
+);
+
+# Создаем таблицу employees
+
+CREATE TABLE "employees" (
+  id serial PRIMARY KEY,
+  name varchar,
+  last_name varchar,
+  hire_date DATE,
+  salary integer,
+  email varchar,
+  manager_id integer,
+  FOREIGN KEY(manager_id) REFERENCES employees(id)
+);
+
+# Создаем таблицу departments
+
+CREATE TABLE "departments" (
+  id serial PRIMARY KEY,
+  name varchar,
+  location_id integer REFERENCES regions (id),
+  manager_id integer REFERENCES employees (id)
+);
+
+# Добавляем department_id в таблицу employees
+
+ALTER TABLE employees ADD COLUMN department_id integer REFERENCES departments(id);
+
+#########################################################
+
+# Показать работников у которых нет почты или почта не в корпоративном домене (домен dualbootpartners.com)
+
+SELECT name, last_name
+FROM employees
+WHERE email NOT LIKE '%@dualbootpartners.com' OR email IS NULL;
+
+# Получить список работников нанятых в последние 30 дней
+
+SELECT *
+FROM employees
+WHERE (CURRENT_DATE - hire_date) <= 30;
+
+# Найти максимальную и минимальную зарплату по каждому департаменту
+
+SELECT d.name AS department, MAX(salary) AS max_salary, MIN(salary) AS min_salary
+FROM departments AS d
+JOIN employees AS e ON e.department_id = d.id
+GROUP BY d.name;
+
+# Посчитать количество работников в каждом регионе
+
+SELECT r.name AS region, COUNT(e.id) AS count
+FROM employees AS e
+JOIN departments as d ON e.department_id = d.id
+JOIN locations AS l ON d.location_id = l.id
+JOIN regions as r ON l.region_id = r.id
+GROUP BY r.name;
+
+# Показать сотрудников у которых фамилия длиннее 10 символов
+
+SELECT last_name, name
+FROM employees
+WHERE LENGTH(last_name) > 10
+ORDER BY last_name;
+
+# Показать сотрудников с зарплатой выше средней по всей компании
+
+SELECT name, last_name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees)
+ORDER BY salary DESC;
+
+
+
